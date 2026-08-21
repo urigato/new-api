@@ -93,7 +93,7 @@ func redisRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) g
 			return
 		}
 		if !allowed {
-			abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("您已达到请求数限制：%d分钟内最多请求%d次", setting.ModelRequestRateLimitDurationMinutes, successMaxCount))
+			abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("요청 횟수 제한에 도달했습니다: %d분 동안 최대 %d회까지 요청할 수 있습니다", setting.ModelRequestRateLimitDurationMinutes, successMaxCount))
 			return
 		}
 
@@ -117,7 +117,7 @@ func redisRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) g
 			}
 
 			if !allowed {
-				abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("您已达到总请求数限制：%d分钟内最多请求%d次，包括失败次数，请检查您的请求是否正确", setting.ModelRequestRateLimitDurationMinutes, totalMaxCount))
+				abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("총 요청 횟수 제한에 도달했습니다: %d분 동안 최대 %d회(실패 포함). 요청이 올바른지 확인해 주세요", setting.ModelRequestRateLimitDurationMinutes, totalMaxCount))
 				return
 			}
 		}
