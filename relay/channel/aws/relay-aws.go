@@ -345,6 +345,52 @@ func handleNovaRequest(c *gin.Context, info *relaycommon.RelayInfo, a *Adaptor) 
 		return types.NewError(errors.Wrap(err, "unmarshal nova response"), types.ErrorCodeBadResponseBody), nil
 	}
 
+	var novaText string
+	if len(novaResp.Output.Message.Content) > 0 {
+		novaText = novaResp.Output.Message.Content[0].Text
+	}
+	usage := dto.Usage{
+		PromptTokens:     novaResp.Usage.InputTokens,
+		CompletionTokens: novaResp.Usage.OutputTokens,
+		TotalTokens:      novaResp.Usage.TotalTokens,
+	}
+
+	// Nova는 InvokeModel(비스트리밍)로만 호출하므로, 클라이언트가 스트리밍을
+	// 요청한 경우 완성 응답을 SSE 청크로 감싸 전달한다 (플레이그라운드 호환)
+	if info.IsStream {
+		helper.SetEventStreamHeaders(c)
+		finishReason := "stop"
+		contentChunk := dto.ChatCompletionsStreamResponse{
+			Id:      helper.GetResponseID(c),
+			Object:  "chat.completion.chunk",
+			Created: common.GetTimestamp(),
+			Model:   info.UpstreamModelName,
+			Choices: []dto.ChatCompletionsStreamResponseChoice{{
+				Index: 0,
+				Delta: dto.ChatCompletionsStreamResponseChoiceDelta{Role: "assistant", Content: &novaText},
+			}},
+		}
+		finishChunk := dto.ChatCompletionsStreamResponse{
+			Id:      contentChunk.Id,
+			Object:  "chat.completion.chunk",
+			Created: contentChunk.Created,
+			Model:   info.UpstreamModelName,
+			Choices: []dto.ChatCompletionsStreamResponseChoice{{
+				Index:        0,
+				FinishReason: &finishReason,
+			}},
+			Usage: &usage,
+		}
+		if err := helper.ObjectData(c, contentChunk); err != nil {
+			return types.NewError(errors.Wrap(err, "write nova stream chunk"), types.ErrorCodeBadResponseBody), nil
+		}
+		if err := helper.ObjectData(c, finishChunk); err != nil {
+			return types.NewError(errors.Wrap(err, "write nova stream finish chunk"), types.ErrorCodeBadResponseBody), nil
+		}
+		helper.Done(c)
+		return nil, &usage
+	}
+
 	// 构造OpenAI格式响应
 	response := dto.OpenAITextResponse{
 		Id:      helper.GetResponseID(c),
@@ -355,15 +401,11 @@ func handleNovaRequest(c *gin.Context, info *relaycommon.RelayInfo, a *Adaptor) 
 			Index: 0,
 			Message: dto.Message{
 				Role:    "assistant",
-				Content: novaResp.Output.Message.Content[0].Text,
+				Content: novaText,
 			},
 			FinishReason: "stop",
 		}},
-		Usage: dto.Usage{
-			PromptTokens:     novaResp.Usage.InputTokens,
-			CompletionTokens: novaResp.Usage.OutputTokens,
-			TotalTokens:      novaResp.Usage.TotalTokens,
-		},
+		Usage: usage,
 	}
 
 	c.JSON(http.StatusOK, response)
