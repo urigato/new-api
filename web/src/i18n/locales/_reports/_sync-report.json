@@ -19,6 +19,12 @@
       "extrasCount": 0,
       "untranslatedCount": 0
     },
+    "ko": {
+      "file": "ko.json",
+      "missingCount": 164,
+      "extrasCount": 26,
+      "untranslatedCount": 0
+    },
     "ru": {
       "file": "ru.json",
       "missingCount": 0,
