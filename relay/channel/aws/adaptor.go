@@ -72,6 +72,10 @@ func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayIn
 			request.Messages[i] = message
 		}
 	}
+	// Bedrock rejects requests specifying both temperature and top_p for newer Claude models
+	if request.Temperature != nil && request.TopP != nil {
+		request.TopP = nil
+	}
 	return request, nil
 }
 
@@ -132,6 +136,10 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 		return nil, fmt.Errorf("expected Anthropic Messages request, got %T", result.Value)
 	}
 	info.UpstreamModelName = claudeReq.Model
+	// Bedrock rejects requests specifying both temperature and top_p for newer Claude models
+	if claudeReq.Temperature != nil && claudeReq.TopP != nil {
+		claudeReq.TopP = nil
+	}
 	return claudeReq, err
 }
 
