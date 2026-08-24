@@ -225,6 +225,11 @@ func TestIsOpenAIGPT5Model(t *testing.T) {
 		{model: "gpt-5.6-luna", want: true},
 		{model: "gpt-5.4-nano", want: true},
 		{model: "gpt-5.2-2025-12-11", want: true},
+		// Hosted inference profile IDs (e.g. AWS Bedrock) prefix the model name.
+		{model: "global.openai.gpt-5.6-terra", want: true},
+		{model: "us.openai.gpt-5.1", want: true},
+		{model: "openai/gpt-5-mini", want: true},
+		{model: "global.openai.gpt-6-astra", want: false},
 		{model: "gpt-6-astra", want: false},
 		{model: "gpt-50", want: false},
 		{model: "gpt-5custom", want: false},

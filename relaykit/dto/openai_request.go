@@ -300,7 +300,22 @@ func IsOpenAIReasoningOModel(modelName string) bool {
 
 // IsOpenAIGPT5Model identifies the GPT-5 family, independently of request capabilities.
 func IsOpenAIGPT5Model(modelName string) bool {
+	modelName = normalizeOpenAIModelName(modelName)
 	return modelName == "gpt-5" || strings.HasPrefix(modelName, "gpt-5-") || strings.HasPrefix(modelName, "gpt-5.")
+}
+
+// normalizeOpenAIModelName strips the vendor/region prefixes that hosted
+// inference profiles add to OpenAI model IDs (e.g. Bedrock
+// "global.openai.gpt-5.6-terra", "us.openai.gpt-5.1", or "openai/gpt-5") so
+// that family and capability checks see the bare model name.
+func normalizeOpenAIModelName(modelName string) string {
+	if idx := strings.LastIndex(modelName, "/"); idx >= 0 {
+		modelName = modelName[idx+1:]
+	}
+	if idx := strings.Index(modelName, "openai."); idx >= 0 {
+		modelName = modelName[idx+len("openai."):]
+	}
+	return modelName
 }
 
 // OpenAIChatCapabilities describes independent Chat Completions compatibility rules.
@@ -316,6 +331,7 @@ type OpenAIChatCapabilities struct {
 // Unrecognized models retain their parameters; future GPT generations do not
 // automatically inherit the restrictions of existing models.
 func GetOpenAIChatCapabilities(modelName, reasoningEffort string) OpenAIChatCapabilities {
+	modelName = normalizeOpenAIModelName(modelName)
 	capabilities := OpenAIChatCapabilities{
 		SupportsTemperature: true,
 		SupportsTopP:        true,
