@@ -228,7 +228,10 @@ func IsOpenAIReasoningOModel(modelName string) bool {
 }
 
 func IsOpenAIGPT5Model(modelName string) bool {
-	return strings.HasPrefix(modelName, "gpt-5")
+	// Bedrock inference profile IDs carry vendor/region prefixes, e.g. global.openai.gpt-5.6-terra
+	return strings.HasPrefix(modelName, "gpt-5") ||
+		strings.Contains(modelName, "openai.gpt-5") ||
+		strings.Contains(modelName, "/gpt-5")
 }
 
 func IsQwenThinkingBudgetModel(modelName string) bool {
