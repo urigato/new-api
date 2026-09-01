@@ -76,11 +76,36 @@ func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayIn
 			request.Messages[i] = message
 		}
 	}
+	stripUnsupportedSamplingParams(request, info.GetUpstreamModelName())
+	return request, nil
+}
+
+// Claude Opus 4.7 이후 세대(Opus 4.7/4.8, Claude 5 계열)는 샘플링 파라미터가 API에서
+// 제거되어 temperature/top_p/top_k 지정 시 Bedrock이 ValidationException(400)으로 거부한다.
+func isClaudeSamplingRemovedModel(modelName string) bool {
+	m := strings.ToLower(modelName)
+	if !strings.Contains(m, "claude") {
+		return false
+	}
+	for _, marker := range []string{"opus-4-7", "opus-4-8", "opus-5", "sonnet-5", "haiku-5", "fable-5", "mythos-5"} {
+		if strings.Contains(m, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func stripUnsupportedSamplingParams(request *dto.ClaudeRequest, upstreamModelName string) {
+	if isClaudeSamplingRemovedModel(upstreamModelName) || isClaudeSamplingRemovedModel(request.Model) {
+		request.Temperature = nil
+		request.TopP = nil
+		request.TopK = nil
+		return
+	}
 	// Bedrock rejects requests specifying both temperature and top_p for newer Claude models
 	if request.Temperature != nil && request.TopP != nil {
 		request.TopP = nil
 	}
-	return request, nil
 }
 
 func (a *Adaptor) ConvertAudioRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.AudioRequest) (io.Reader, error) {
@@ -140,10 +165,7 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 		return nil, fmt.Errorf("expected Anthropic Messages request, got %T", result.Value)
 	}
 	info.UpstreamModelName = claudeReq.Model
-	// Bedrock rejects requests specifying both temperature and top_p for newer Claude models
-	if claudeReq.Temperature != nil && claudeReq.TopP != nil {
-		claudeReq.TopP = nil
-	}
+	stripUnsupportedSamplingParams(claudeReq, info.GetUpstreamModelName())
 	return claudeReq, err
 }
 
