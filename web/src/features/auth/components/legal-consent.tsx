@@ -95,3 +95,57 @@ export function LegalConsent({
     </div>
   )
 }
+
+interface LegalNoticeProps {
+  status: SystemStatus | null
+  className?: string
+}
+
+/**
+ * Passive legal notice for the sign-in page. Consent is collected explicitly
+ * at sign-up; signing in (including first sign-in through an external
+ * account) is treated as continued acceptance, so no checkbox gates the
+ * login buttons here.
+ */
+export function LegalNotice({ status, className }: LegalNoticeProps) {
+  const { t } = useTranslation()
+  const hasUserAgreement = Boolean(status?.user_agreement_enabled)
+  const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
+
+  if (!hasUserAgreement && !hasPrivacyPolicy) {
+    return null
+  }
+
+  return (
+    <p
+      className={cn(
+        'text-muted-foreground text-left text-xs leading-5',
+        className
+      )}
+    >
+      {t('By signing in or continuing with an external account, you agree to the')}{' '}
+      {hasUserAgreement && (
+        <a
+          href='/user-agreement'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='text-primary hover:underline'
+        >
+          {t('User Agreement')}
+        </a>
+      )}
+      {hasUserAgreement && hasPrivacyPolicy && ` ${t('and')} `}
+      {hasPrivacyPolicy && (
+        <a
+          href='/privacy-policy'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='text-primary hover:underline'
+        >
+          {t('Privacy Policy')}
+        </a>
+      )}
+      .
+    </p>
+  )
+}
