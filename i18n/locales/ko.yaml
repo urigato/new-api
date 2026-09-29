@@ -283,3 +283,11 @@ custom_oauth.provider_id_field_invalid: "공급자 응답에서 사용자 ID를 
 token.auto_groups_too_many: "토큰당 Auto 그룹은 최대 {{.Max}}개까지 선택할 수 있습니다"
 token.auto_groups_duplicate: "Auto 그룹 {{.Group}}이(가) 중복되었습니다"
 token.auto_groups_invalid: "Auto 그룹 {{.Group}}은(는) 사용할 수 없거나 권한이 없습니다"
+
+# rc.40 additions
+task_plugin.unknown_meta_field: '플러그인 메타데이터에 알 수 없는 필드 "{{.Field}}"가 있습니다. 공식 마켓플레이스에서 받은 플러그인이라면 더 새로운 버전의 new-api가 필요할 수 있습니다. new-api를 업데이트한 뒤 플러그인을 다시 설치해 보세요.'
+passkey.rp_id_invalid: "패스키 도메인이 올바르지 않습니다. 프로토콜, 포트, 경로, 와일드카드 없이 도메인만 입력하세요."
+passkey.rp_id_unavailable: "이 패스키 도메인은 현재 사이트에서 사용할 수 없습니다. 원래 사이트를 이용하거나 다른 인증 방법을 선택하세요."
+passkey.rp_id_removal_confirmation: "영향을 받는 패스키를 확인한 뒤 도메인 삭제를 확정하세요. 설정이나 영향 범위가 바뀌면 다시 확인해야 합니다."
+oauth.not_auto_linked: "이 {{.Provider}} 계정은 기존 계정에 자동으로 연결할 수 없습니다. 다른 방법으로 로그인하거나 가입한 뒤 계정 설정에서 {{.Provider}}를 연결해 주세요"
+distributor.no_available_channel_task_plugin: "그룹 {{.Group}}에서 모델 {{.Model}}을(를) 처리할 수 있는 채널이 없습니다: 이 모델은 작업 플러그인이 담당하지만 현재 활성화된 채널이 없습니다 (distributor)"
