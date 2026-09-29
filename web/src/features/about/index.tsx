@@ -28,6 +28,9 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { getAboutContent } from './api'
 
+// AGPL-3.0 §13: link to the modified source running on this deployment.
+const DEPLOYMENT_SOURCE_URL = 'https://github.com/urigato/new-api'
+
 function EmptyAboutState() {
   const { t } = useTranslation()
   const currentYear = new Date().getFullYear()
@@ -93,6 +96,17 @@ function EmptyAboutState() {
               className='text-primary hover:underline'
             >
               {t('JustSong')}
+            </a>
+          </p>
+          <p>
+            {t('Source code of this deployment (modified version):')}{' '}
+            <a
+              href={DEPLOYMENT_SOURCE_URL}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-primary hover:underline'
+            >
+              {DEPLOYMENT_SOURCE_URL}
             </a>
           </p>
           <p className='text-muted-foreground'>
