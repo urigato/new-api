@@ -31,6 +31,36 @@ type AwsClaudeRequest struct {
 	//Metadata         json.RawMessage     `json:"metadata,omitempty"`
 }
 
+// bedrockUnsupportedBetaPrefixes lists anthropic-beta features that exist only on
+// the first-party API. Clients such as Claude Code send them unconditionally, and
+// Bedrock answers 400 ("Unexpected value(s) ... for the anthropic-beta header")
+// instead of ignoring them, so they are dropped before the InvokeModel call.
+var bedrockUnsupportedBetaPrefixes = []string{
+	"prompt-caching-scope-",
+	"oauth-",
+}
+
+func filterBedrockBetas(header string) []string {
+	var betas []string
+	for _, beta := range strings.Split(header, ",") {
+		beta = strings.TrimSpace(beta)
+		if beta == "" {
+			continue
+		}
+		unsupported := false
+		for _, prefix := range bedrockUnsupportedBetaPrefixes {
+			if strings.HasPrefix(beta, prefix) {
+				unsupported = true
+				break
+			}
+		}
+		if !unsupported {
+			betas = append(betas, beta)
+		}
+	}
+	return betas
+}
+
 func formatRequest(requestBody io.Reader, requestHeader http.Header) (*AwsClaudeRequest, error) {
 	var awsClaudeRequest AwsClaudeRequest
 	err := common.DecodeJson(requestBody, &awsClaudeRequest)
@@ -40,17 +70,12 @@ func formatRequest(requestBody io.Reader, requestHeader http.Header) (*AwsClaude
 	awsClaudeRequest.AnthropicVersion = "bedrock-2023-05-31"
 
 	// check header anthropic-beta
-	anthropicBetaValues := requestHeader.Get("anthropic-beta")
-	if len(anthropicBetaValues) > 0 {
-		var tempArray []string
-		tempArray = strings.Split(anthropicBetaValues, ",")
-		if len(tempArray) > 0 {
-			betaJson, err := json.Marshal(tempArray)
-			if err != nil {
-				return nil, err
-			}
-			awsClaudeRequest.AnthropicBeta = betaJson
+	if betas := filterBedrockBetas(requestHeader.Get("anthropic-beta")); len(betas) > 0 {
+		betaJson, err := json.Marshal(betas)
+		if err != nil {
+			return nil, err
 		}
+		awsClaudeRequest.AnthropicBeta = betaJson
 	}
 	logger.LogJson(context.Background(), "json", awsClaudeRequest)
 	return &awsClaudeRequest, nil
