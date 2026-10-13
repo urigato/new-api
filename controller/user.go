@@ -639,10 +639,16 @@ func GetUserModels(c *gin.Context) {
 			groupsToQuery = []string{group}
 		}
 	}
+	models := service.GetGroupsEnabledModels(groupsToQuery)
+	// chat_only=true (playground) hides models whose metadata declares only
+	// non-chat endpoints, e.g. embedding models served next to chat models.
+	if c.Query("chat_only") == "true" {
+		models = model.FilterChatCapableModels(models)
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
-		"data":    service.GetGroupsEnabledModels(groupsToQuery),
+		"data":    models,
 	})
 }
 
